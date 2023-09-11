@@ -1,0 +1,11 @@
+config {
+  type: "view",
+  columns: {
+  id: "Ticket ID",
+  created_at: "Ticket creation timestamp",
+  subject: "The subject of the ticket"
+}
+}
+
+SELECT id, created_at, subject
+FROM `rosy-cooler-398212.zendesk.ticket`

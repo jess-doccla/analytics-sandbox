@@ -1,0 +1,13 @@
+config {
+  type: "table",
+  columns: {
+  created_date: "Ticket creation date",
+  count: "The number of tickets created"
+}
+}
+
+SELECT
+  DATE(created_at) AS created_date,
+  COUNT(DISTINCT id) as count
+FROM ${ref("tickets")}
+GROUP BY 1

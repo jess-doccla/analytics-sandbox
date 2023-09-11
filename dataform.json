@@ -1,0 +1,8 @@
+{
+  "defaultSchema": "dataform",
+  "assertionSchema": "dataform_assertions",
+  "warehouse": "bigquery",
+  "defaultDatabase": "rosy-cooler-398212",
+  "defaultLocation": "europe-west2"
+}
+    
