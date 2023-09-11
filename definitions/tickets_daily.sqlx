@@ -1,5 +1,6 @@
 config {
   type: "table",
+  description: "Daily counts of tickets created",
   columns: {
   created_date: "Ticket creation date",
   count: "The number of tickets created"

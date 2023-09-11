@@ -1,5 +1,6 @@
 config {
   type: "view",
+  description: "View of tickets created (raw)",
   columns: {
   id: "Ticket ID",
   created_at: "Ticket creation timestamp",
