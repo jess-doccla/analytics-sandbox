@@ -1,0 +1,12 @@
+config {
+  type: "assertion"
+}
+
+WITH freshness AS (
+  SELECT
+    TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), MAX(created_at), HOUR) AS delay
+  FROM ${ref("tickets")}
+)
+SELECT *
+FROM freshness
+WHERE delay > 72
