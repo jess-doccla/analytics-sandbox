@@ -2,9 +2,13 @@ config {
   type: "table",
   description: "Daily counts of tickets created",
   columns: {
-  created_date: "Ticket creation date",
-  count: "The number of tickets created"
-}
+    created_date: "Ticket creation date",
+    count: "The number of tickets created"
+  },
+  dependencies: [
+    "dataform_tickets_assertions_uniqueKey_0",
+    "freshness_tickets"
+  ]
 }
 
 SELECT
