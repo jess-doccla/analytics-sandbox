@@ -1,0 +1,14 @@
+config {
+  type: "table",
+  description: "Monthly counts of tickets created",
+  columns: {
+  created_date: "Ticket creation month",
+  count: "The number of tickets created"
+}
+}
+
+SELECT
+  DATE_TRUNC(DATE(created_at), MONTH) AS created_month,
+  COUNT(DISTINCT id) as count
+FROM ${ref("tickets")}
+GROUP BY 1
