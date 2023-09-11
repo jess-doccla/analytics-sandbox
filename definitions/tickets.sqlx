@@ -2,10 +2,13 @@ config {
   type: "view",
   description: "View of tickets created (raw)",
   columns: {
-  id: "Ticket ID",
-  created_at: "Ticket creation timestamp",
-  subject: "The subject of the ticket"
-}
+    id: "Ticket ID",
+    created_at: "Ticket creation timestamp",
+    subject: "The subject of the ticket"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
 }
 
 SELECT id, created_at, subject
