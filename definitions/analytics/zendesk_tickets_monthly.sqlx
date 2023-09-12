@@ -5,7 +5,9 @@ config {
   description: "Monthly counts of tickets created",
   columns: {
     created_date: "Ticket creation month",
-    count: "The number of tickets created"
+    tickets_created: "The number of tickets created",
+    tickets_created_to_date: "The cumulative number of tickets created",
+    record_tickets_created_to_date: "Flag to indicate that the daily number of tickets created is the highest to date"
   },
   dependencies: [
     "freshness_zendesk_tickets",
@@ -13,8 +15,24 @@ config {
   ]
 }
 
-SELECT
-  DATE_TRUNC(DATE(created_at), MONTH) AS created_month,
-  COUNT(DISTINCT id) as count
-FROM ${ref("src_zendesk_ticket")}
-GROUP BY 1
+WITH monthly_counts AS (
+  SELECT
+    DATE_TRUNC(DATE(created_at), MONTH) AS created_month,
+    COUNT(DISTINCT id) as count
+  FROM ${ref("src_zendesk_ticket")}
+  GROUP BY 1
+)
+
+SELECT x_date AS created_month
+  , IFNULL(count, 0) AS tickets_created
+  , SUM(IFNULL(count, 0)) OVER (
+    ORDER BY x_date
+    ROWS UNBOUNDED PRECEDING 
+  ) AS tickets_created_to_date
+  , CASE WHEN IFNULL(count, 0) > MAX(IFNULL(count, 0))  OVER (
+    ORDER BY x_date
+    ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+  ) THEN "new monthly record" END AS record_tickets_created_to_date
+FROM UNNEST(GENERATE_DATE_ARRAY("2022-10-01", DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 1 MONTH)) AS x_date /* generate array of all dates to catch 0 days */
+LEFT JOIN monthly_counts ON x_date = created_month
+ORDER BY 1
