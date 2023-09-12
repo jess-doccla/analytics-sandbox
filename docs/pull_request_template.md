@@ -16,4 +16,4 @@ addressed, and remove any items that are not relevant to this PR.
 - [ ] I have added dependencies on uniqueKey assertions and freshness tests where appropriate
 - [ ] My SQL follows the style guide. This includes avoidance of 'SELECT *', used snakecase column names
 - [ ] I have not pulled in any new data that may contain PID or health data without checking on #tech-data slack
-- [ ] I have executed all models sucessfully
+- [ ] I have executed all models successfully
