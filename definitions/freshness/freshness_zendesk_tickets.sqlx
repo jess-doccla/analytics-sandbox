@@ -1,12 +1,13 @@
 config {
-  type: "assertion"
+  type: "assertion",
+  tags: ["zendesk"]
 }
 
 WITH freshness AS (
   SELECT
     TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), MAX(created_at), HOUR) AS delay
-  FROM ${ref("tickets")}
+  FROM ${ref("src_zendesk_ticket")}
 )
 SELECT *
 FROM freshness
-WHERE delay > 72
+WHERE delay > 240   /* set high limit as d3v data */
