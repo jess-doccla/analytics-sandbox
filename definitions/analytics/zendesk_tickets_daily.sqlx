@@ -1,18 +1,20 @@
 config {
   type: "table",
+  schema: "analytics",
+  tags: ["zendesk"],
   description: "Daily counts of tickets created",
   columns: {
     created_date: "Ticket creation date",
     count: "The number of tickets created"
   },
   dependencies: [
-    "dataform_tickets_assertions_uniqueKey_0",
-    "freshness_tickets"
+    "freshness_zendesk_tickets",
+    "intermediate_int_zendesk_ticket_assertions_uniqueKey_0"
   ]
 }
 
 SELECT
   DATE(created_at) AS created_date,
   COUNT(DISTINCT id) as count
-FROM ${ref("tickets")}
+FROM ${ref("int_zendesk_ticket")}
 GROUP BY 1

@@ -1,6 +1,8 @@
 config {
   type: "view",
-  description: "View of tickets created (raw)",
+  schema: "intermediate",
+  tags: ["zendesk"],
+  description: "View of zendesk tickets created (raw)",
   columns: {
     id: "Ticket ID",
     created_at: "Ticket creation timestamp",
@@ -12,4 +14,4 @@ config {
 }
 
 SELECT id, created_at, subject
-FROM `rosy-cooler-398212.zendesk.ticket`
+FROM ${ref("ticket")}
