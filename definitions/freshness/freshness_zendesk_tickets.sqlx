@@ -6,7 +6,7 @@ config {
 WITH freshness AS (
   SELECT
     TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), MAX(created_at), HOUR) AS delay
-  FROM ${ref("int_zendesk_ticket")}
+  FROM ${ref("src_zendesk_ticket")}
 )
 SELECT *
 FROM freshness
