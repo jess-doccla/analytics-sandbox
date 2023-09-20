@@ -1,0 +1,18 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Measurement Origins",
+  columns: {
+    id: "Origin ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , entered_by
+  , connection_type
+  , manufacturer
+FROM ${ref("origin")}

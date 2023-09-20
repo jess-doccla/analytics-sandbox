@@ -2,7 +2,7 @@ config {
   type: "table",
   schema: "intermediate",
   tags: ["oth"],
-  description: "OTH Patient",
+  description: "OTH Patients",
   columns: {
     patient_id: "Patient ID"
   },

@@ -1,0 +1,35 @@
+config {
+  type: "table",
+  schema: "intermediate",
+  tags: ["oth"],
+  description: "OTH Measurements",
+  columns: {
+    measurement_id: "Measurement ID"
+  },
+  assertions: {
+    uniqueKey: ["measurement_id"]
+  },
+  dependencies: [
+    "sources_src_oth_measurement_assertions_uniqueKey_0",
+    "sources_src_oth_measurement_type_assertions_uniqueKey_0",
+    "sources_src_oth_origin_assertions_uniqueKey_0"
+  ]
+}
+
+SELECT m.id AS measurement_id
+  , m.patient_id
+  , m.time AS measurement_time
+  , mt.name AS measurement_type_name
+  , m.severity
+  , m.value AS measurement_value
+  , m.unit
+  , m.diastolic
+  , m.systolic
+  , m.measurement_node_result_id
+  , m.consultation_id
+  , o.entered_by -- blank if device
+  , o.connection_type AS device_connection_type
+  , o.manufacturer AS device_manufacturer
+FROM ${ref("src_oth_measurement")} AS m
+LEFT JOIN ${ref("src_oth_measurement_type")} AS mt ON m.measurement_type_id = mt.id
+LEFT JOIN ${ref("src_oth_origin")} AS o ON m.origin_id = o.id

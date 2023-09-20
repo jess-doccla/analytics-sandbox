@@ -1,0 +1,16 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Measurement Types",
+  columns: {
+    id: "Measurement Type ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , name
+FROM ${ref("measurement_type")}
