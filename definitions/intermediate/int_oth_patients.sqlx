@@ -1,0 +1,49 @@
+config {
+  type: "table",
+  schema: "intermediate",
+  tags: ["oth"],
+  description: "OTH Patient",
+  columns: {
+    patient_id: "Patient ID"
+  },
+  assertions: {
+    uniqueKey: ["patient_id"]
+  },
+  dependencies: [
+    "sources_src_oth_patient_assertions_uniqueKey_0",
+    "sources_src_oth_users_assertions_uniqueKey_0",
+    "sources_src_oth_audit_log_events_assertions_uniqueKey_0",
+    "sources_src_oth_audit_resource_logs_assertions_uniqueKey_0"
+  ]
+}
+
+WITH state_change_log AS (
+  SELECT SAFE_CAST(REPLACE(r.resource_url, "https://doccla-demo.oth.io/clinician/api/patients/", "") AS INT64) AS patient_id
+    , MIN(CASE WHEN JSON_EXTRACT_SCALAR(e.diff, "$.state.added") = 'DISCHARGED' THEN e.event_time END) AS patient_first_discharged_at
+    , ARRAY_AGG(STRUCT(e.event_time AS state_changed_at
+      , e.responsible_name AS state_changed_by
+      , JSON_EXTRACT_SCALAR(e.diff, "$.state.removed") AS state_changed_from
+      , JSON_EXTRACT_SCALAR(e.diff, "$.state.added") AS state_changed_to
+    ) ORDER BY e.event_time) AS patient_state_log
+  FROM ${ref("src_oth_audit_log_events")} AS e
+  LEFT JOIN ${ref("src_oth_audit_resource_logs")} AS r ON e.resource_log_id = r.id
+  WHERE e.event_name = 'patient_updated'
+  AND JSON_EXTRACT_SCALAR(e.diff, "$.state.added") IS NOT NULL
+  GROUP BY 1
+)
+
+SELECT p.id AS patient_id
+  , u.username AS patient_username
+  , p.created_date AS patient_created_date
+  , p.created_by AS patient_created_by
+  , s.patient_first_discharged_at
+  , p.state AS patient_current_state
+  , patient_state_log
+  , p.cpr AS patient_cpr
+  , p.sex AS patient_sex
+  , p.age_at_creation AS patient_age_at_creation
+  , p.monitoring_plan_id
+  , p.user_id
+FROM ${ref("src_oth_patient")} AS p
+LEFT JOIN ${ref("src_oth_users")} AS u ON p.user_id = u.id
+LEFT JOIN state_change_log AS s ON p.id = s.patient_id

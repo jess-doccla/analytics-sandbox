@@ -1,0 +1,17 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Audit Resource Log",
+  columns: {
+    id: "Resource Log ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , resource_type
+  , resource_url
+FROM ${ref("resource_logs")}

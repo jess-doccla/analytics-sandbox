@@ -1,0 +1,21 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Audit Log Events",
+  columns: {
+    id: "Log Event ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , event_name
+  , event_time
+  , responsible_name
+  , values
+  , diff
+  , resource_log_id
+FROM ${ref("log_events")}

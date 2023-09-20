@@ -1,0 +1,26 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Patients",
+  columns: {
+    id: "Patient ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , created_date
+  , created_by
+  , state
+  , cpr -- Need to check in Prod
+  , sex
+  , DATE_DIFF(created_date, date_of_birth, YEAR) - 
+    IF(EXTRACT(MONTH FROM date_of_birth)*100 + EXTRACT(DAY FROM date_of_birth) > 
+      EXTRACT(MONTH FROM created_date)*100 + EXTRACT(DAY FROM created_date)
+      ,1,0) AS age_at_creation -- age considered lower PII than DOB
+  , monitoring_plan_id
+  , user_id
+FROM ${ref("patient")}
