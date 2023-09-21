@@ -1,0 +1,16 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Users",
+  columns: {
+    id: "User ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , username
+FROM ${ref("users")}

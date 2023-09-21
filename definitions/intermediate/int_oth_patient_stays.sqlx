@@ -1,0 +1,70 @@
+config {
+  type: "table",
+  schema: "intermediate",
+  tags: ["oth"],
+  description: "OTH Patient Stays as defined by state changes between active and discharged",
+  columns: {
+    patient_id: "Patient ID"
+  },
+  assertions: {
+    uniqueKey: ["patient_stay_id"]
+  },
+  dependencies: [
+    "sources_src_oth_audit_log_events_assertions_uniqueKey_0",
+    "sources_src_oth_audit_resource_logs_assertions_uniqueKey_0"
+  ]
+}
+
+WITH state_change_log AS (
+  SELECT SAFE_CAST(REPLACE(r.resource_url, "https://doccla-demo.oth.io/clinician/api/patients/", "") AS INT64) AS patient_id
+    , e.event_time AS state_changed_at
+    , JSON_EXTRACT_SCALAR(e.diff, "$.state.removed") AS state_changed_from
+    , JSON_EXTRACT_SCALAR(e.diff, "$.state.added") AS state_changed_to
+    , LEAD(JSON_EXTRACT_SCALAR(e.diff, "$.state.added")) OVER(PARTITION BY r.resource_url ORDER BY e.event_time) AS next_state
+    , LEAD(e.event_time) OVER(PARTITION BY r.resource_url ORDER BY e.event_time) next_state_at
+  FROM ${ref("src_oth_audit_log_events")} AS e
+  LEFT JOIN ${ref("src_oth_audit_resource_logs")} AS r ON e.resource_log_id = r.id
+  WHERE JSON_EXTRACT_SCALAR(e.diff, "$.state.added") IS NOT NULL
+)
+
+, patient_stays AS (
+  SELECT SHA256(patient_id||state_changed_at) AS patient_stay_id -- generated ID per patient stay
+    , patient_id
+    , state_changed_at AS active_from
+    , CASE WHEN next_state = 'DISCHARGED' THEN next_state_at END AS dicharged_at
+  FROM state_change_log
+  WHERE state_changed_to = 'ACTIVE'
+)
+
+, same_day_reactivation_correction AS (
+  SELECT patient_stay_id
+    , patient_id
+    , active_from
+    , dicharged_at
+    , CASE WHEN DATE(LAG(dicharged_at) OVER(PARTITION BY patient_id ORDER BY active_from)) = DATE(active_from) 
+      THEN 1 ELSE 0 END AS discharge_in_error_flag
+    , CASE WHEN DATE(LEAD(active_from) OVER(PARTITION BY patient_id ORDER BY active_from)) = DATE(dicharged_at) 
+      THEN LEAD(dicharged_at) OVER(PARTITION BY patient_id ORDER BY active_from) END AS dicharged_at_correction
+  FROM patient_stays
+)
+
+SELECT s.patient_stay_id
+  , s.patient_id
+  , s.active_from
+  , COALESCE(s.dicharged_at_correction, s.dicharged_at) AS dicharged_at
+  , MIN(q.questionnaire_completed_at) AS first_questionnaire_completed_at
+  , MIN(m.measurement_time) AS first_measurement_at
+  , COALESCE(LEAST(MIN(q.questionnaire_completed_at), MIN(m.measurement_time))
+    , MIN(q.questionnaire_completed_at)
+    , MIN(m.measurement_time)) AS onboarded_at
+FROM same_day_reactivation_correction AS s
+LEFT JOIN ${ref("int_oth_completed_questionnaires")} AS q 
+  ON s.patient_id = q.patient_id 
+  AND q.questionnaire_completed_at BETWEEN s.active_from
+    AND COALESCE(s.dicharged_at_correction, s.dicharged_at, CURRENT_DATETIME())
+LEFT JOIN ${ref("int_oth_measurements")} AS m
+  ON s.patient_id = m.patient_id 
+  AND m.measurement_time BETWEEN s.active_from
+    AND COALESCE(s.dicharged_at_correction, s.dicharged_at, CURRENT_DATETIME())
+WHERE discharge_in_error_flag = 0
+GROUP BY 1,2,3,4

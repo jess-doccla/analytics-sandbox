@@ -1,0 +1,72 @@
+config {
+  type: "table",
+  schema: "intermediate",
+  tags: ["oth"],
+  description: "OTH Patient Active Days",
+  columns: {
+    patient_id: "Patient ID"
+  },
+  assertions: {
+    uniqueKey: ["patient_active_date_id"]
+  },
+  dependencies: [
+    "intermediate_int_oth_patient_stays_assertions_uniqueKey_0",
+    "intermediate_int_oth_measurements_assertions_uniqueKey_0"
+  ]
+}
+
+WITH active_days AS (
+  SELECT patient_stay_id
+    , patient_id
+    , active_date
+    , onboarded_at
+    , dicharged_at
+    , SHA256(patient_id||active_date) AS patient_active_date_id
+  FROM ${ref("int_oth_patient_stays")}
+  , UNNEST(GENERATE_DATE_ARRAY(
+      DATE(onboarded_at)
+      , COALESCE(DATE(dicharged_at), CURRENT_DATE())
+      , INTERVAL 1 DAY)
+    ) AS active_date
+)
+
+, daily_measurements AS (
+  SELECT patient_id
+    , DATE(measurement_time) AS measurement_date
+    , COUNT(*) AS measurements_count
+    , SUM(CASE WHEN severity = 'RED' THEN 1 ELSE 0 END) AS red_measurements
+    , MIN(measurement_time) AS first_measurement_at
+  FROM ${ref("int_oth_measurements")}
+  GROUP BY 1,2
+)
+
+, daily_questionnaires AS (
+  SELECT patient_id
+    , DATE(questionnaire_completed_at) AS questionnaire_completed_date
+    , COUNT(*) AS questionnaires_count
+    , SUM(CASE WHEN severity = 'RED' THEN 1 ELSE 0 END) AS red_questionnaires
+    , MIN(questionnaire_completed_at) AS first_questionnaire_completed_at
+  FROM ${ref("int_oth_completed_questionnaires")}
+  GROUP BY 1,2
+)
+
+SELECT a.patient_active_date_id
+  , a.patient_stay_id
+  , a.patient_id
+  , a.active_date
+  , CASE WHEN a.active_date = DATE(a.onboarded_at) THEN 1 ELSE 0 END AS onboarded_date
+  , CASE WHEN a.active_date = DATE(a.dicharged_at) THEN 1 ELSE 0 END AS dicharged_date
+  , IFNULL(m.measurements_count, 0) AS measurements_count
+  , IFNULL(m.red_measurements, 0) AS red_measurements
+  , m.first_measurement_at
+  , IFNULL(q.questionnaires_count, 0) AS questionnaires_count
+  , IFNULL(q.red_questionnaires, 0) AS red_questionnaires
+  , q.first_questionnaire_completed_at
+  , CASE WHEN m.measurements_count > 0 OR q.questionnaires_count > 0 THEN 1 ELSE 0 END AS compliant_day
+FROM active_days AS a
+LEFT JOIN daily_measurements AS m 
+  ON a.patient_id = m.patient_id
+  AND a.active_date = m.measurement_date
+LEFT JOIN daily_questionnaires AS q
+  ON a.patient_id = q.patient_id
+  AND a.active_date = q.questionnaire_completed_date

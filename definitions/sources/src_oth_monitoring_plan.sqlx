@@ -1,0 +1,17 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Monitoring Plans - links to monitoring plan to a patient",
+  columns: {
+    id: "Monitoring Plan ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , patient_id
+  , start_date
+FROM ${ref("monitoring_plan")}

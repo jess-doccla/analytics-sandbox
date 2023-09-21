@@ -1,0 +1,26 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Measurements",
+  columns: {
+    id: "Measurement ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , patient_id
+  , time
+  , measurement_type_id
+  , severity
+  , value
+  , unit
+  , diastolic
+  , systolic
+  , origin_id
+  , measurement_node_result_id
+  , consultation_id
+FROM ${ref("measurement")}

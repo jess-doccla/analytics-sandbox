@@ -1,0 +1,24 @@
+config {
+  type: "table",
+  schema: "analytics",
+  tags: ["zendesk"],
+  description: "Daily counts of tickets created",
+  columns: {
+    created_date: "Ticket creation date",
+    tickets_created: "The number of tickets created",
+    tickets_created_to_date: "The cumulative number of tickets created",
+    record_tickets_created_to_date: "Flag to indicate that the daily number of tickets created is the highest to date"
+  },
+  dependencies: [
+    "intermediate_int_oth_patient_active_days_assertions_uniqueKey_0"
+  ]
+}
+
+SELECT active_date
+  , COUNT(*) AS patients_active
+  , SUM(compliant_day) AS compliant_days
+  , SUM(onboarded_date) AS patients_onboarded
+  , SUM(dicharged_date) AS patients_discharged
+FROM ${ref("int_oth_patient_active_days")}
+GROUP BY 1
+ORDER BY 1

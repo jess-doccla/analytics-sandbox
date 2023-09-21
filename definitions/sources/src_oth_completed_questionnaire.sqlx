@@ -1,0 +1,20 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Completed Questionnaires",
+  columns: {
+    id: "Completed Questionnaire ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , patient_id
+  , questionnaire_id
+  , received_date
+  , severity
+  , acknowledged_date
+FROM ${ref("completed_questionnaire")}

@@ -1,0 +1,52 @@
+config {
+  type: "table",
+  schema: "intermediate",
+  tags: ["oth"],
+  description: "OTH patient group historical patient assignments",
+  columns: {
+    patient_id: "Patient ID"
+  },
+  dependencies: [
+    "sources_src_oth_patient_group_assertions_uniqueKey_0",
+    "sources_src_oth_audit_log_events_assertions_uniqueKey_0",
+    "sources_src_oth_audit_resource_logs_assertions_uniqueKey_0"
+  ]
+}
+
+WITH patient_groups_added AS (
+SELECT e.id AS log_event_id
+  , JSON_EXTRACT_SCALAR(g, "$.") AS patient_group_name
+  , e.event_time AS patient_group_added_at
+  , LEAD(e.event_time) OVER(PARTITION BY r.resource_url, g ORDER BY e.event_time) AS patient_group_next_added_at
+  , SAFE_CAST(REPLACE(r.resource_url, "https://doccla-demo.oth.io/clinician/api/patients/", "") AS INT64) AS patient_id
+FROM ${ref("src_oth_audit_log_events")} AS e
+, UNNEST(JSON_EXTRACT_ARRAY(diff, "$.patientGroups.added")) AS g
+JOIN ${ref("src_oth_audit_resource_logs")} AS r ON e.resource_log_id = r.id AND r.resource_type = 'patient'
+WHERE e.event_name = 'patient_group_assignments_changed'
+)
+
+, patient_groups_removed AS (
+SELECT e.id AS log_event_id
+  , JSON_EXTRACT_SCALAR(g, "$.") AS patient_group_name
+  , e.event_time AS patient_group_removed_at
+  , SAFE_CAST(REPLACE(r.resource_url, "https://doccla-demo.oth.io/clinician/api/patients/", "") AS INT64) AS patient_id
+FROM ${ref("src_oth_audit_log_events")} AS e
+, UNNEST(JSON_EXTRACT_ARRAY(diff, "$.patientGroups.removed")) AS g
+JOIN ${ref("src_oth_audit_resource_logs")} AS r ON e.resource_log_id = r.id AND r.resource_type = 'patient'
+WHERE e.event_name = 'patient_group_assignments_changed'
+)
+
+SELECT a.patient_id
+  , g.id AS patient_group_id -- not completely comprehensive in demo (e.g. Somerset - Respiratory General - TDS). Check in prod
+  , g.organization_url AS patient_group_organization_url
+  , a.patient_group_name
+  , a.patient_group_added_at
+  , r.patient_group_removed_at
+FROM patient_groups_added AS a
+LEFT JOIN ${ref("src_oth_patient_group")} AS g ON a.patient_group_name = g.name
+LEFT JOIN patient_groups_removed AS r 
+  ON a.patient_id = r.patient_id
+  AND a.patient_group_name = r.patient_group_name
+  AND r.patient_group_removed_at 
+    BETWEEN a.patient_group_added_at 
+    AND COALESCE(a.patient_group_next_added_at, CURRENT_DATETIME())

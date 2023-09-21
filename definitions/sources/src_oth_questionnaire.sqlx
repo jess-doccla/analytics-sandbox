@@ -1,0 +1,16 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Questionnaires - details of questionnaires",
+  columns: {
+    id: "Questionnaire ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , questionnaire_header_id
+FROM ${ref("questionnaire")}

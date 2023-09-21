@@ -1,0 +1,29 @@
+config {
+  type: "table",
+  schema: "intermediate",
+  tags: ["oth"],
+  description: "OTH Measurements",
+  columns: {
+    measurement_id: "Measurement ID"
+  },
+  assertions: {
+    uniqueKey: ["completed_questionnaire_id"]
+  },
+  dependencies: [
+    "sources_src_oth_completed_questionnaire_assertions_uniqueKey_0",
+    "sources_src_oth_questionnaire_assertions_uniqueKey_0",
+    "sources_src_oth_questionnaire_header_assertions_uniqueKey_0"
+  ]
+}
+
+SELECT cq.id AS completed_questionnaire_id
+  , cq.patient_id
+  , cq.questionnaire_id
+  , q.questionnaire_header_id
+  , qh.name AS questionnaire_header_name
+  , cq.received_date AS questionnaire_completed_at
+  , cq.severity
+  , cq.acknowledged_date
+FROM ${ref("src_oth_completed_questionnaire")} AS cq
+LEFT JOIN ${ref("src_oth_questionnaire")} AS q ON cq.questionnaire_id = q.id
+LEFT JOIN ${ref("src_oth_questionnaire_header")} AS qh ON q.questionnaire_header_id = qh.id

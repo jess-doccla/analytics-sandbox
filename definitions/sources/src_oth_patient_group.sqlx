@@ -1,0 +1,17 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Patient Groups",
+  columns: {
+    id: "Patient Group ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , name -- only latest name shown, need to find history
+  , organization_url
+FROM ${ref("patient_group")}
