@@ -1,0 +1,28 @@
+config {
+  type: "view",
+  schema: "sources",
+  tags: ["oth"],
+  description: "OTH Questionnaire Schedules - links a questionnaire to a patients monitoring plan and specifies the measurement schedule",
+  columns: {
+    id: "Questionnaire Schedule ID"
+  },
+  assertions: {
+    uniqueKey: ["id"]
+  }
+}
+
+SELECT id
+  , monitoring_plan_id
+  , questionnaire_header_id
+  , starting_date
+  , type
+  , weekdays
+  , intro_period_weeks
+  , weekdays_intro_period
+  , weekdays_second_period
+  , specific_date
+  , days_in_month
+  , times_of_day
+  , reminder_time
+  , blue_alarm_time
+FROM ${ref("questionnaire_schedule")}

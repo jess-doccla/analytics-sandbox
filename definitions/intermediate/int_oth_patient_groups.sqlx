@@ -43,7 +43,7 @@ SELECT a.patient_id
   , a.patient_group_added_at
   , r.patient_group_removed_at
 FROM patient_groups_added AS a
-LEFT JOIN ${ref("patient_group")} AS g ON a.patient_group_name = g.name
+LEFT JOIN ${ref("src_oth_patient_group")} AS g ON a.patient_group_name = g.name
 LEFT JOIN patient_groups_removed AS r 
   ON a.patient_id = r.patient_id
   AND a.patient_group_name = r.patient_group_name
